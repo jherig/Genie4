@@ -92,7 +92,7 @@ namespace GenieClient
         public static string GetMD5HashFromFile(string fileName)
         {
             var file = new FileStream(fileName, FileMode.Open, FileAccess.Read);
-            MD5 md5 = new MD5CryptoServiceProvider();
+            MD5 md5 = MD5.Create();
             var retVal = md5.ComputeHash(file);
             file.Close();
             var sb = new StringBuilder();

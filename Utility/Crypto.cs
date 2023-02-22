@@ -25,7 +25,7 @@ namespace GenieClient
             SHA1 = 0,
             SHA256 = 1,
             SHA384 = 2,
-            Rijndael = 3,
+            AES = 3,
             TripleDES = 4,
             RSA = 5,
             RC2 = 6,
@@ -360,31 +360,31 @@ namespace GenieClient
             {
                 case Algorithm.SHA1:
                     {
-                        hashAlgorithm = new SHA1CryptoServiceProvider();
+                        hashAlgorithm = SHA1.Create();
                         break;
                     }
 
                 case Algorithm.SHA256:
                     {
-                        hashAlgorithm = new SHA256Managed();
+                        hashAlgorithm = SHA256.Create();
                         break;
                     }
 
                 case Algorithm.SHA384:
                     {
-                        hashAlgorithm = new SHA384Managed();
+                        hashAlgorithm = SHA384.Create();
                         break;
                     }
 
                 case Algorithm.SHA512:
                     {
-                        hashAlgorithm = new SHA512Managed();
+                        hashAlgorithm = SHA512.Create();
                         break;
                     }
 
                 case Algorithm.MD5:
                     {
-                        hashAlgorithm = new MD5CryptoServiceProvider();
+                        hashAlgorithm = MD5.Create();
                         break;
                     }
 
@@ -471,28 +471,28 @@ namespace GenieClient
                 {
                     case Algorithm.DES:
                         {
-                            provider = new DESCryptoServiceProvider();
+                            provider = DES.Create();
                             NumBytes = (int)KeySize.DES;
                             break;
                         }
 
                     case Algorithm.TripleDES:
                         {
-                            provider = new TripleDESCryptoServiceProvider();
+                            provider = TripleDES.Create();
                             NumBytes = (int)KeySize.TripleDES;
                             break;
                         }
 
-                    case Algorithm.Rijndael:
+                    case Algorithm.AES:
                         {
-                            provider = new RijndaelManaged();
+                            provider = Aes.Create();
                             NumBytes = (int)KeySize.AES;
                             break;
                         }
 
                     case Algorithm.RC2:
                         {
-                            provider = new RC2CryptoServiceProvider();
+                            provider = RC2.Create();
                             NumBytes = (int)KeySize.RC2;
                             break;
                         }
@@ -572,28 +572,28 @@ namespace GenieClient
                 {
                     case Algorithm.DES:
                         {
-                            provider = new DESCryptoServiceProvider();
+                            provider = DES.Create();
                             NumBytes = (int)KeySize.DES;
                             break;
                         }
 
                     case Algorithm.TripleDES:
                         {
-                            provider = new TripleDESCryptoServiceProvider();
+                            provider = TripleDES.Create();
                             NumBytes = (int)KeySize.TripleDES;
                             break;
                         }
 
-                    case Algorithm.Rijndael:
+                    case Algorithm.AES:
                         {
-                            provider = new RijndaelManaged();
+                            provider = Aes.Create();
                             NumBytes = (int)KeySize.AES;
                             break;
                         }
 
                     case Algorithm.RC2:
-                        {
-                            provider = new RC2CryptoServiceProvider();
+                    {
+                            provider = RC2.Create();
                             NumBytes = (int)KeySize.RC2;
                             break;
                         }
@@ -934,7 +934,7 @@ namespace GenieClient
                 salt = new byte[1];
             }
 
-            var seed = new RNGCryptoServiceProvider();
+            var seed = RandomNumberGenerator.Create();
             seed.GetBytes(salt);
             return salt;
         }

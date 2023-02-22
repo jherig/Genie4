@@ -204,7 +204,7 @@ namespace GenieClient
         {
             if (sText.Length == 0)
                 return string.Empty;
-            Crypto.EncryptionAlgorithm = Crypto.Algorithm.Rijndael;
+            Crypto.EncryptionAlgorithm = Crypto.Algorithm.AES;
             Crypto.Encoding = Crypto.EncodingType.HEX;
             Crypto.Key = sPassword;
             if (Crypto.EncryptString(sText))
@@ -223,7 +223,7 @@ namespace GenieClient
         {
             if (sText.Length == 0)
                 return string.Empty;
-            Crypto.EncryptionAlgorithm = Crypto.Algorithm.Rijndael;
+            Crypto.EncryptionAlgorithm = Crypto.Algorithm.AES;
             Crypto.Encoding = Crypto.EncodingType.HEX;
             Crypto.Key = sPassword;
             Crypto.Content = sText;
@@ -684,7 +684,7 @@ namespace GenieClient
             DateTime dt;
             dt = Conversions.ToDate("01/01/2000").AddDays(AssemblyVersion.Build).AddSeconds(AssemblyVersion.Revision * 2);
 
-            if (TimeZone.IsDaylightSavingTime(dt, TimeZone.CurrentTimeZone.GetDaylightChanges(dt.Year)))
+            if (TimeZoneInfo.Local.IsDaylightSavingTime(dt))
             {
                 dt = dt.AddHours(1);
             }

@@ -174,17 +174,17 @@ namespace GenieClient.Genie
         private string m_sRoomObjs = string.Empty;
         private string m_sRoomPlayers = string.Empty;
         private string m_sRoomExits = string.Empty;
-        private int m_iHealth = 100;
-        private int m_iMana = 100;
-        private int m_iSpirit = 100;
-        private int m_iStamina = 100;
-        private int m_iConcentration = 100;
+        //private int m_iHealth = 100;
+        //private int m_iMana = 100;
+        //private int m_iSpirit = 100;
+        //private int m_iStamina = 100;
+        //private int m_iConcentration = 100;
         private int m_iEncumbrance = 0;
         private string m_sCharacterName = string.Empty;
         private string m_sGameName = string.Empty;
         private int m_iRoundTime = 0;
         private int m_iGameTime = 0;
-        private string m_sTriggerBuffer = string.Empty;
+        //private string m_sTriggerBuffer = string.Empty;
         private bool m_bLastRowWasPrompt = false;
         private bool m_bUpdatingRoom = false;
         private bool m_bUpdateRoomOnStreamEnd = false;
@@ -2901,7 +2901,8 @@ namespace GenieClient.Genie
             }
 
             text = ParseSubstitutions(text);
-            if (0 == 1)//(text.Trim().Length > 0)
+#if false
+            if (text.Trim().Length > 0)
             {
                 // Substitute Lists Switch this to text = ParseSubstrings(text) so theres only one place subs are processed at
                 if (m_oGlobals.SubstituteList.AcquireReaderLock())
@@ -2940,6 +2941,7 @@ namespace GenieClient.Genie
                     GenieError.Error("PrintTextToWindow", "Unable to aquire reader lock.");
                 }
             }
+#endif
 
             if (targetwindow == WindowTarget.Main)
             {

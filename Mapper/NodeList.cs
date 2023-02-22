@@ -187,10 +187,9 @@ namespace GenieClient.Mapper
 
         public override bool Equals(object obj)
         {
-            if (obj is Point3D)
+            if (obj is Point3D withBlock)
             {
                 {
-                    var withBlock = (Point3D)obj;
                     if (X != withBlock.X)
                         return false;
                     if (Y != withBlock.Y)
@@ -205,6 +204,16 @@ namespace GenieClient.Mapper
             }
 
             return true;
+        }
+
+        protected bool Equals(Point3D other)
+        {
+            return m_iX == other.m_iX && m_iY == other.m_iY && m_iZ == other.m_iZ;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(m_iX, m_iY, m_iZ);
         }
     }
 
@@ -275,10 +284,9 @@ namespace GenieClient.Mapper
 
         public override bool Equals(object obj)
         {
-            if (obj is Label)
+            if (obj is Label withBlock)
             {
                 {
-                    var withBlock = (Label)obj;
                     if ((withBlock.Text ?? "") == (Text ?? "") & withBlock.Position.X == Position.X & withBlock.Position.Y == Position.Y & withBlock.Position.Z == Position.Z)
                     {
                         return true;
@@ -291,6 +299,16 @@ namespace GenieClient.Mapper
             }
 
             return true;
+        }
+
+        protected bool Equals(Label other)
+        {
+            return m_sText == other.m_sText && Equals(m_oPosition, other.m_oPosition) && m_Rect.Equals(other.m_Rect);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(m_sText, m_oPosition, m_Rect);
         }
     }
 
@@ -835,10 +853,9 @@ namespace GenieClient.Mapper
 
         public override bool Equals(object obj)
         {
-            if (obj is Node)
+            if (obj is Node withBlock)
             {
                 {
-                    var withBlock = (Node)obj;
                     if (ID != withBlock.ID)
                         return false;
                 }
@@ -849,6 +866,30 @@ namespace GenieClient.Mapper
             }
 
             return true;
+        }
+
+        protected bool Equals(Node other)
+        {
+            return m_State == other.m_State && Equals(m_Origin, other.m_Origin) && m_bArranged == other.m_bArranged && m_iID == other.m_iID && m_sName == other.m_sName && Equals(m_Descriptions, other.m_Descriptions) && m_HyperLink == other.m_HyperLink && m_IsLabelFile == other.m_IsLabelFile && m_Note == other.m_Note && m_Color.Equals(other.m_Color) && Equals(m_oPosition, other.m_oPosition) && Equals(m_oArcList, other.m_oArcList) && RisingMists == other.RisingMists;
+        }
+
+        public override int GetHashCode()
+        {
+            HashCode hashCode = new HashCode();
+            hashCode.Add((int)m_State);
+            hashCode.Add(m_Origin);
+            hashCode.Add(m_bArranged);
+            hashCode.Add(m_iID);
+            hashCode.Add(m_sName);
+            hashCode.Add(m_Descriptions);
+            hashCode.Add(m_HyperLink);
+            hashCode.Add(m_IsLabelFile);
+            hashCode.Add(m_Note);
+            hashCode.Add(m_Color);
+            hashCode.Add(m_oPosition);
+            hashCode.Add(m_oArcList);
+            hashCode.Add(RisingMists);
+            return hashCode.ToHashCode();
         }
 
         public bool ContainsArc(Arc Item)

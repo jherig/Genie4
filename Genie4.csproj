@@ -59,8 +59,11 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Plugins\**" />
     <Compile Remove="Plugin\**" />
+    <EmbeddedResource Remove="Plugins\**" />
     <EmbeddedResource Remove="Plugin\**" />
+    <None Remove="Plugins\**" />
     <None Remove="Plugin\**" />
   </ItemGroup>
   <ItemGroup>
@@ -194,9 +197,6 @@
     <EmbeddedResource Include="Resources\skin_topright.bmp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="Plugin\Plugins.vbproj" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Libs\Antlr3.Runtime.dll" />
     <EmbeddedResource Include="Libs\Interfaces.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -207,10 +207,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
-    <PackageReference Include="Microsoft.VisualBasic" Version="10.3.0" />
-    <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.3.261602">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="6.0.0" />
   </ItemGroup>
   <ItemGroup>
@@ -221,6 +217,9 @@
     
     <None Remove="Libs\lua51.dll" />
     <None Remove="Libs\LuaInterface.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Plugins\Plugins.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="LICENSE">

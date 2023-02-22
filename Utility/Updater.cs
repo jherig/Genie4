@@ -81,7 +81,7 @@ namespace GenieClient
 
         public static void UpdateUpdater()
         {
-            if (1 == 1) return;
+#if false
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
             client.DefaultRequestHeaders.Add("User-Agent", "Genie Client Updater");
@@ -98,6 +98,9 @@ namespace GenieClient
                     response.Content.CopyToAsync(updaterFile);
                 }
             }
+#else
+            return;
+#endif
         }
 
         public static void RunUpdate()
