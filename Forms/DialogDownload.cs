@@ -1,62 +1,127 @@
 ﻿using System;
-using System.Net;
+using System.IO;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
 using Microsoft.VisualBasic;
 using Microsoft.VisualBasic.CompilerServices;
 
 namespace GenieClient
 {
+    public delegate void DownloadProgressChangedHandler(long? totalFileSize, long totalBytesDownloaded, double? progressPercentage);
+
+    public delegate void DownloadFileCompletedHandler();
+
+    public class HttpClientWithProgress : HttpClient
+    {
+        private string _downloadUrl;
+        private string _destinationFilePath;
+        private readonly CancellationTokenSource _cancelSource = new CancellationTokenSource();
+
+        public event DownloadProgressChangedHandler DownloadProgressChanged;
+        public event DownloadFileCompletedHandler DownloadFileCompleted;
+
+        public HttpClientWithProgress()
+        {
+        }
+
+        public HttpClientWithProgress(string downloadUrl, string destinationFilePath)
+        {
+            _downloadUrl = downloadUrl;
+            _destinationFilePath = destinationFilePath;
+        }
+
+        public async Task DownloadFileAsync(string downloadUrl, string destinationFilePath)
+        {
+            _downloadUrl = downloadUrl;
+            _destinationFilePath = destinationFilePath;
+            using var response = await GetAsync(_downloadUrl, HttpCompletionOption.ResponseHeadersRead, _cancelSource.Token);
+            await DownloadFileFromHttpResponseMessage(response);
+        }
+
+        public void CancelAsync()
+        {
+            _cancelSource.Cancel();
+        }
+
+        private async Task DownloadFileFromHttpResponseMessage(HttpResponseMessage response)
+        {
+            response.EnsureSuccessStatusCode();
+            long? totalBytes = response.Content.Headers.ContentLength;
+            using (var contentStream = await response.Content.ReadAsStreamAsync())
+                await ProcessContentStream(totalBytes, contentStream);
+        }
+
+        private async Task ProcessContentStream(long? totalDownloadSize, Stream contentStream)
+        {
+            long totalBytesRead = 0L;
+            long readCount = 0L;
+            byte[] buffer = new byte[8192];
+            bool isMoreToRead = true;
+
+            await using (FileStream fileStream = new FileStream(_destinationFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+            {
+                do
+                {
+                    int bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length);
+                    if (bytesRead == 0)
+                    {
+                        isMoreToRead = false;
+                        continue;
+                    }
+
+                    await fileStream.WriteAsync(buffer, 0, bytesRead);
+
+                    totalBytesRead += bytesRead;
+                    readCount += 1;
+
+                    if (readCount % 10 == 0)
+                        TriggerProgressChanged(totalDownloadSize, totalBytesRead);
+                }
+                while (isMoreToRead);
+            }
+            TriggerProgressChanged(totalDownloadSize, totalBytesRead);
+            DownloadFileCompleted?.Invoke();
+        }
+
+        private void TriggerProgressChanged(long? totalDownloadSize, long totalBytesRead)
+        {
+            if (DownloadProgressChanged == null)
+                return;
+
+            double? progressPercentage = null;
+            if (totalDownloadSize.HasValue)
+                progressPercentage = Math.Round((double)totalBytesRead / totalDownloadSize.Value * 100, 2);
+
+            DownloadProgressChanged(totalDownloadSize, totalBytesRead, progressPercentage);
+        }
+    }
+
     public partial class DialogDownload
     {
         public DialogDownload()
         {
-            myWebClient = new WebClient();
             InitializeComponent();
         }
 
-        private WebClient _myWebClient;
-
-        private WebClient myWebClient
-        {
-            [MethodImpl(MethodImplOptions.Synchronized)]
-            get
-            {
-                return _myWebClient;
-            }
-
-            [MethodImpl(MethodImplOptions.Synchronized)]
-            set
-            {
-                if (_myWebClient != null)
-                {
-                    _myWebClient.DownloadProgressChanged -= UpdateDl;
-                    _myWebClient.DownloadFileCompleted -= UpdateDlFinished;
-                }
-
-                _myWebClient = value;
-                if (_myWebClient != null)
-                {
-                    _myWebClient.DownloadProgressChanged += UpdateDl;
-                    _myWebClient.DownloadFileCompleted += UpdateDlFinished;
-                }
-            }
-        }
-
-        private DateTime myStartTime = new DateTime();
-        private bool DownloadCancelled = false;
-        private string strUpdateString = string.Empty;
+        private readonly HttpClientWithProgress _myWebClient = new HttpClientWithProgress();
+        
+        private DateTime _myStartTime;
+        private bool _downloadCancelled;
+        private string _strUpdateString = string.Empty;
 
         public object UpdateToString
         {
             get
             {
-                return strUpdateString;
+                return _strUpdateString;
             }
 
             set
             {
-                strUpdateString = Conversions.ToString(value);
+                _strUpdateString = Conversions.ToString(value);
             }
         }
 
@@ -70,57 +135,57 @@ namespace GenieClient
 
         private void Cancel_Button_Click(object sender, EventArgs e)
         {
-            myWebClient.CancelAsync();
+            _myWebClient.CancelAsync();
             DialogResult = DialogResult.Cancel;
             Close();
         }
 
-        public void DownloadFile(string URL, string strFileName)
+        public void DownloadFile(string url, string strFileName)
         {
-            myWebClient.DownloadFileAsync(new Uri(URL), LocalDirectory.Path + @"\" + strFileName);
-            myStartTime = DateTime.Now;
-            LabelFile.Text = "Downloading to: " + strFileName;
-            LabelFile.Tag = "Downloading to: " + strFileName;
+            _myWebClient.DownloadFileAsync(url, LocalDirectory.Path + @"\" + strFileName);
+            _myStartTime = DateTime.Now;
+            LabelFile.Text =  "Downloading to: " + strFileName;
+            LabelFile.Tag =   "Downloading to: " + strFileName;
             LabelSpeed.Text = "0 of 0 kb received. (0 kb/s)";
         }
 
-        private void UpdateDl(object sender, DownloadProgressChangedEventArgs e)
+        private void UpdateDl(long? totalFileSize, long totalBytesDownloaded, double? progressPercentage)
         {
             var argbar = ProgressBar1;
-            int argpercent = e.ProgressPercentage;
-            UpdateProgressBar(argbar, argpercent);
+            int percent = progressPercentage.HasValue ? (int)progressPercentage.Value : 0;
+            UpdateProgressBar(argbar, percent);
             var arglabel = LabelFile;
-            string argtext = " (" + e.ProgressPercentage + "%)";
+            string argtext = $" ({percent}%)";
             UpdateLabelText(arglabel, argtext);
             var arglabel1 = LabelSpeed;
-            string argtext1 = Math.Round(e.BytesReceived / (double)1024, 0) + " of " + Math.Round(e.TotalBytesToReceive / (double)1024, 0) + " kb received. (" + CurrentSpeed(Conversions.ToInteger(e.BytesReceived), myStartTime, DateTime.Now) + ")";
+            string argtext1 = Math.Round(totalBytesDownloaded / (double)1024, 0) + " of " + (totalFileSize.HasValue ? Math.Round(totalFileSize.Value / (double)1024, 0) : "unknown") + " kb received. (" + CurrentSpeed(Conversions.ToInteger(totalBytesDownloaded), _myStartTime, DateTime.Now) + ")";
             UpdateLabelText(arglabel1, argtext1);
         }
 
-        private bool bRelaunch = false;
+        private bool _bRelaunch = false;
 
-        private void UpdateDlFinished(object sender, System.ComponentModel.AsyncCompletedEventArgs e)
+        private void UpdateDlFinished()
         {
-            if (DownloadCancelled == true)
+            if (_downloadCancelled == true)
             {
-                var arglabel = LabelSpeed;
+                Label arglabel = LabelSpeed;
                 string argtext = "Aborted.";
                 UpdateLabelText(arglabel, argtext);
-                var argbar = ProgressBar1;
+                ProgressBar argbar = ProgressBar1;
                 int argpercent = 0;
                 UpdateProgressBar(argbar, argpercent);
             }
             else
             {
-                var arglabel1 = LabelSpeed;
+                Label arglabel1 = LabelSpeed;
                 string argtext1 = "Finished.";
                 UpdateLabelText(arglabel1, argtext1);
                 OK_Button.Enabled = true;
                 ButtonDownload.Enabled = false;
-                bRelaunch = true;
+                _bRelaunch = true;
             }
 
-            DownloadCancelled = false;
+            _downloadCancelled = false;
         }
 
         public string CurrentSpeed(int bytesReceived, DateTime startTime, DateTime endTime)
@@ -138,11 +203,7 @@ namespace GenieClient
             ButtonDownload.Tag = true;
             LabelFile.Text = "";
             LabelSpeed.Text = "";
-            LabelNewVersion.Text = "An update is available for Genie!" + System.Environment.NewLine + System.Environment.NewLine + "Your Version: " + My.MyProject.Application.Info.Version.ToString() + System.Environment.NewLine + "Update Version: " + strUpdateString + System.Environment.NewLine;
-
-
-
-            // strExeName = Application.ExecutablePath.Substring(Application.ExecutablePath.LastIndexOf("\") + 1)
+            LabelNewVersion.Text = "An update is available for Genie!" + System.Environment.NewLine + System.Environment.NewLine + "Your Version: " + My.MyProject.Application.Info.Version.ToString() + System.Environment.NewLine + "Update Version: " + _strUpdateString + System.Environment.NewLine;
         }
 
         private void Button1_Click(object sender, EventArgs e)
@@ -156,8 +217,8 @@ namespace GenieClient
             else
             {
                 ButtonDownload.Tag = true;
-                DownloadCancelled = true;
-                myWebClient.CancelAsync();
+                _downloadCancelled = true;
+                _myWebClient.CancelAsync();
                 ButtonDownload.Text = "Download";
             }
         }
@@ -228,7 +289,7 @@ namespace GenieClient
             {
                 if (MajorUpdate == true)
                 {
-                    if (!bRelaunch)
+                    if (!_bRelaunch)
                     {
                         Interaction.MsgBox("This is a major update of Genie. You will need to update to play.");
                         e.Cancel = true;

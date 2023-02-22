@@ -22,6 +22,7 @@ namespace GenieClient
         private const int EM_LINESCROLL = 0xB6;
         // private const int EM_GETLINECOUNT = 0xBA;
 
+#pragma warning disable CS0649
         private struct SCROLLINFO
         {
             public int cbSize;
@@ -32,6 +33,7 @@ namespace GenieClient
             public int nPos;
             public int nTrackPos;
         }
+#pragma warning restore CS0649
 
         [DllImport("user32.dll")]
         private static extern bool GetScrollInfo(IntPtr hWnd, int nBar, SCROLLINFO lpScrollInfo);
